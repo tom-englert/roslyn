@@ -2478,13 +2478,22 @@ namespace Microsoft.CodeAnalysis.CSharp
             return GetDiagnostics(CompilationStage.Compile, false, cancellationToken);
         }
 
+        internal ImmutableArray<Diagnostic>? WithAnalyzerDiagnostics { get; set; }
+
         /// <summary>
         /// Gets the all the diagnostics for the compilation, including syntax, declaration, and binding. Does not
         /// include any diagnostics that might be produced during emit.
         /// </summary>
         public override ImmutableArray<Diagnostic> GetDiagnostics(CancellationToken cancellationToken = default)
         {
-            return GetDiagnostics(DefaultDiagnosticsStage, true, cancellationToken);
+            if (WithAnalyzerDiagnostics.HasValue)
+            {
+                return WithAnalyzerDiagnostics.Value;
+            }
+
+            var diags = GetDiagnostics(DefaultDiagnosticsStage, true, cancellationToken); // .ToArray();
+
+            return diags;
         }
 
         internal ImmutableArray<Diagnostic> GetDiagnostics(CompilationStage stage, bool includeEarlierStages, CancellationToken cancellationToken)

@@ -273,7 +273,7 @@ namespace Microsoft.CodeAnalysis
             return c; // note this is a new compilation
         }
 
-        private static TCompilation GetCompilationWithAnalyzerDiagnostics<TCompilation>(
+        public static TCompilation GetCompilationWithAnalyzerDiagnostics<TCompilation>(
             this TCompilation c,
             DiagnosticAnalyzer[] analyzers,
             AnalyzerOptions options,
@@ -294,10 +294,10 @@ namespace Microsoft.CodeAnalysis
             var driver = AnalyzerDriver.CreateAndAttachToCompilation(c, analyzersArray, options, analyzerManager, onAnalyzerException,
                 analyzerExceptionFilter: null, reportAnalyzer: false, severityFilter: SeverityFilter.None, out var newCompilation, cancellationToken);
             Debug.Assert(newCompilation.SemanticModelProvider != null);
-            var compilerDiagnostics = newCompilation.GetDiagnostics(cancellationToken);
+            var compilerDiagnostics = newCompilation.GetDiagnostics(cancellationToken).Where(item => !item.IsSuppressed);
             var analyzerDiagnostics = driver.GetDiagnosticsAsync(newCompilation).Result;
             var allDiagnostics = includeCompilerDiagnostics ?
-                compilerDiagnostics.AddRange(analyzerDiagnostics) :
+                compilerDiagnostics.Concat(analyzerDiagnostics).AsImmutable() :
                 analyzerDiagnostics;
             diagnostics = driver.ApplyProgrammaticSuppressions(allDiagnostics, newCompilation);
 
